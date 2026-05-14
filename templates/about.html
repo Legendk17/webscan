@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% block title %}About — SecureScan Pro{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb"><i class="fas fa-circle-info"></i> About</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">About SecureScan Pro</h1>
+    <p class="page-subtitle">Comprehensive web application security scanning platform — built entirely in Python</p>
+</div>
+
+<!-- Hero About Card -->
+<div class="about-hero">
+    <div class="about-hero-icon"><i class="fas fa-shield-halved"></i></div>
+    <div class="about-hero-content">
+        <h2>SecureScan Pro v2.0</h2>
+        <p>A professional-grade, open-source web application security scanner built entirely in Python with Flask. Covers all OWASP Top 10 vulnerability categories, 25+ scanning modules, and produces detailed, actionable security reports. Designed for security professionals, developers, and penetration testers.</p>
+        <div class="about-badges">
+            <span class="about-badge"><i class="fas fa-python"></i> Python 3.11</span>
+            <span class="about-badge"><i class="fas fa-flask"></i> Flask</span>
+            <span class="about-badge"><i class="fas fa-shield-virus"></i> OWASP Top 10</span>
+            <span class="about-badge"><i class="fas fa-lock"></i> 100+ Checks</span>
+            <span class="about-badge"><i class="fas fa-bolt"></i> Multi-threaded</span>
+        </div>
+    </div>
+</div>
+
+<!-- Tech Stack -->
+<div class="section-header"><h2><i class="fas fa-layer-group"></i> Technology Stack</h2></div>
+<div class="tech-stack-grid">
+    {% set stack = [
+        ("Backend Runtime", "fas fa-server", [
+            ("Python 3.11", "Core language"),
+            ("Flask 3.x", "Web framework & routing"),
+            ("Threading", "Concurrent module execution"),
+            ("Socket", "Port scanning & DNS"),
+            ("SSL/TLS Module", "Certificate analysis"),
+        ]),
+        ("HTTP & Crawling", "fas fa-spider", [
+            ("Requests", "HTTP client for all web checks"),
+            ("BeautifulSoup4", "HTML parsing & link extraction"),
+            ("html.parser", "Built-in HTML processing"),
+            ("urllib.parse", "URL manipulation"),
+            ("concurrent.futures", "Thread pool execution"),
+        ]),
+        ("DNS & Network", "fas fa-network-wired", [
+            ("dnspython", "SPF/DKIM/DMARC/DNSSEC lookups"),
+            ("socket", "Reverse DNS, port checks"),
+            ("ssl", "TLS certificate inspection"),
+            ("IPv4/IPv6", "Full IP range support"),
+        ]),
+        ("Frontend", "fas fa-palette", [
+            ("Jinja2", "Server-side HTML templating"),
+            ("Vanilla JS", "No frameworks — pure ES6"),
+            ("Chart.js 4", "Security score charts"),
+            ("Inter + JetBrains Mono", "Professional typography"),
+            ("Font Awesome 6", "Icon library"),
+            ("CSS Variables", "Dark theme design system"),
+        ]),
+    ] %}
+    {% for title, icon, items in stack %}
+    <div class="ts-card">
+        <div class="ts-header"><i class="{{ icon }}"></i> {{ title }}</div>
+        {% for name, desc in items %}
+        <div class="ts-item"><span class="ts-name">{{ name }}</span><span class="ts-desc">{{ desc }}</span></div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 25 Modules -->
+<div class="section-header"><h2><i class="fas fa-cube"></i> All 25 Security Modules</h2></div>
+<div class="modules-detail-grid">
+{% set all_modules = [
+    ("1", "Target Management", "fas fa-crosshairs", "critical", [
+        "Single target scan", "Multiple target support", "Target inventory & tagging",
+        "Notes and comments", "Quick-launch from target list", "Asset grouping by domain"
+    ]),
+    ("2", "Smart Web Crawler", "fas fa-spider", "info", [
+        "Recursive crawling up to depth 3", "Internal link discovery (40+ pages)",
+        "Form extraction with input analysis", "JavaScript route discovery",
+        "API endpoint detection", "AJAX request pattern matching",
+        "WebSocket endpoint detection", "GraphQL hint detection",
+        "Sitemap.xml parsing", "robots.txt parsing & disallow analysis",
+        "URL parameter extraction", "Upload form detection",
+        "Duplicate URL avoidance", "Scope restriction to target domain"
+    ]),
+    ("3", "Technology Fingerprinting", "fas fa-fingerprint", "info", [
+        "Web server detection (Apache, Nginx, IIS)", "CMS detection (WordPress, Drupal, Joomla, Magento, Shopify)",
+        "Framework detection (Laravel, Django, Rails, Express, Next.js)",
+        "JavaScript framework detection (React, Vue, Angular)",
+        "CDN detection (Cloudflare, AWS CloudFront, Fastly, Akamai)",
+        "WAF detection (ModSecurity, Sucuri, Cloudflare WAF)",
+        "Language detection (PHP, ASP.NET, Python, Node.js)",
+        "Analytics tool detection (Google Analytics, GTM)",
+        "Authentication provider detection (Auth0, Okta)",
+        "Version detection for WordPress, jQuery, Bootstrap",
+        "Server header analysis", "30+ signature patterns"
+    ]),
+    ("4", "OWASP A01 — Broken Access Control", "fas fa-door-open", "critical", [
+        "Admin panel exposure (10+ common paths)", "Directory traversal / path traversal",
+        "HTTP method tampering (PUT, DELETE, TRACE)", "Forced browsing on API endpoints",
+        "Unprotected JSON API endpoints", "Open redirect testing (6 payload variants)",
+        "IDOR indicator detection", "Access control bypass"
+    ]),
+    ("5", "OWASP A02 — Cryptographic Failures", "fas fa-key", "high", [
+        "Expired SSL certificate detection", "Weak TLS protocol check (SSLv3, TLS 1.0/1.1)",
+        "Weak cipher suite detection (RC4, DES, NULL, EXPORT)", "Missing forward secrecy check",
+        "Self-signed certificate detection", "HSTS header missing",
+        "HTTP plaintext access check", "Certificate expiry countdown (30-day warning)"
+    ]),
+    ("6", "OWASP A03 — Injection", "fas fa-syringe", "critical", [
+        "Error-based SQL injection (6 payloads)", "Boolean-based blind SQL injection",
+        "Time-based SQL injection (WAITFOR/SLEEP)", "UNION-based SQL injection",
+        "Reflected XSS (4 payload types)", "DOM XSS sink analysis",
+        "Server-Side Template Injection — SSTI (4 engines)", "OS command injection",
+        "CRLF injection / HTTP header injection", "Host header injection"
+    ]),
+    ("7", "OWASP A04 — Insecure Design", "fas fa-drafting-compass", "medium", [
+        "Rate limiting check on login endpoints", "Predictable/sequential resource ID detection",
+        "Business logic surface identification", "Lack of account lockout detection"
+    ]),
+    ("8", "OWASP A05 — Security Misconfiguration", "fas fa-gear", "high", [
+        "Directory listing detection (6+ paths)", "Verbose error page detection",
+        "Debug/actuator endpoint exposure (15+ paths)", "Default credential testing",
+        "CORS misconfiguration (wildcard + credentials)", "Dangerous HTTP methods allowed",
+        "Disclosure header leakage (Server, X-Powered-By)", "GraphQL introspection enabled",
+        "Swagger/OpenAPI documentation exposed", "File upload testing"
+    ]),
+    ("9", "OWASP A06 — Vulnerable Components", "fas fa-puzzle-piece", "medium", [
+        "WordPress version detection & CVE check", "jQuery version detection & CVE check",
+        "Bootstrap version detection & CVE check", "Exposed package.json check",
+        "Known CVE correlation for detected versions"
+    ]),
+    ("10", "OWASP A07 — Authentication Failures", "fas fa-user-lock", "high", [
+        "Username enumeration via response size diff", "Cookie security flag analysis (Secure/HttpOnly/SameSite)",
+        "Session token in URL detection", "JWT token exposure in response headers",
+        "Brute force protection check (10-request test)", "Insecure cookie attribute detection"
+    ]),
+    ("11", "OWASP A08 — Integrity Failures", "fas fa-file-shield", "medium", [
+        "Missing Subresource Integrity (SRI) on external scripts",
+        "CI/CD configuration exposure (.travis.yml, Jenkinsfile, etc.)",
+        "Jenkins instance public access check", "GitHub workflow file exposure"
+    ]),
+    ("12", "OWASP A09 — Logging & Monitoring Failures", "fas fa-chart-line", "medium", [
+        "Stack trace exposure in error pages", "No account lockout on login forms",
+        "Verbose error messages with internal info", "Missing rate-limit headers"
+    ]),
+    ("13", "OWASP A10 — SSRF", "fas fa-arrows-to-dot", "critical", [
+        "URL parameter injection (15 common param names)", "AWS EC2 metadata access test",
+        "GCP metadata endpoint test", "Azure IMDS test",
+        "localhost/127.0.0.1 access attempt", "IPv6 loopback test",
+        "File protocol abuse", "SSRF-susceptible form detection"
+    ]),
+    ("14", "XSS Testing Engine", "fas fa-code", "high", [
+        "Reflected XSS (4 payload types + encoding variants)", "DOM XSS sink analysis in JS files",
+        "Stored XSS surface identification from forms", "CSP bypass detection",
+        "Context-aware payload injection", "SVG XSS upload testing"
+    ]),
+    ("15", "HTTP Security Analyzer", "fas fa-shield-halved", "medium", [
+        "9 security headers checked with severity ratings",
+        "CSP policy deep analysis (unsafe-inline, unsafe-eval, wildcards)",
+        "CORS misconfiguration testing with evil.com reflection",
+        "Cookie security attribute audit (Secure, HttpOnly, SameSite)",
+        "Dangerous HTTP method enumeration", "Cache-Control analysis",
+        "Content-Encoding detection", "Redirect chain analysis",
+        "Information disclosure header detection", "MIME sniffing protection check"
+    ]),
+    ("16", "Port & Network Scanner", "fas fa-network-wired", "medium", [
+        "31 port scan with service name mapping", "Banner grabbing via raw TCP",
+        "SSL version detection on encrypted ports", "Risky port flagging",
+        "Reverse DNS lookup", "IP resolution", "Parallel scanning (30 threads)",
+        "Service descriptions for all ports"
+    ]),
+    ("17", "DNS Security Module", "fas fa-server", "medium", [
+        "SPF record lookup and analysis (+all/-all/~all)", "DKIM detection (8 common selectors)",
+        "DMARC policy check (p=none warning)", "DNSSEC validation",
+        "Zone transfer vulnerability test (AXFR)", "Subdomain takeover CNAME analysis",
+        "MX record enumeration", "TXT record analysis"
+    ]),
+    ("18", "Sensitive Information Discovery", "fas fa-magnifying-glass", "critical", [
+        "AWS Access Keys (AKIA...)", "Google API Keys (AIza...)",
+        "Stripe live keys (sk_live/pk_live)", "GitHub tokens (ghp_...)",
+        "JWT tokens in responses", "Private key headers",
+        "Firebase configurations", "MongoDB/database URIs",
+        "Hardcoded passwords in HTML/JS", "Internal IP address leakage",
+        "Stack traces and SQL error exposure", "PHP error messages",
+        "Email/phone number PII", "AWS ARN exposure",
+        "Cloud storage URLs", "20+ pattern types scanned"
+    ]),
+    ("19", "File & Backup Discovery", "fas fa-folder-open", "high", [
+        "100+ sensitive path checks", ".env and config file discovery",
+        ".git/HEAD and .git/config exposure", "Database backup files (.sql, .dump)",
+        "Archive files (.zip, .tar.gz)", "phpMyAdmin and admin panel detection",
+        "Log file exposure", "Editor backup files (.bak, ~)",
+        "Debug/info PHP files", "CI/CD configuration files",
+        "Package manager files", "Cloud credential files",
+        "Category-grouped results with content analysis"
+    ]),
+    ("20", "JavaScript Security Analysis", "fas fa-js", "high", [
+        "Secret detection in JS (17 pattern types)", "API endpoint extraction",
+        "DOM XSS sink detection (12 dangerous sinks)", "WebSocket URL discovery",
+        "Hardcoded credential detection", "15 JS files analyzed per scan",
+        "Value masking for safe display", "Per-file result breakdown"
+    ]),
+    ("21", "Subdomain Enumeration", "fas fa-sitemap", "medium", [
+        "80+ common subdomain brute force", "Certificate Transparency (crt.sh) integration",
+        "Subdomain takeover fingerprinting (10 vendors)", "HTTP status checking",
+        "IP resolution per subdomain", "Interesting subdomain flagging (admin, dev, api, git)",
+        "Concurrent DNS lookups (25 threads)"
+    ]),
+    ("22", "Cloud Security Checks", "fas fa-cloud", "high", [
+        "AWS S3 bucket enumeration (open/403/private)", "Firebase database read test",
+        "Azure Blob storage detection", "GCP Cloud Storage bucket check",
+        "Cloud metadata SSRF indicators", "Elasticsearch open access check",
+        "Grafana unauthenticated API check", "7 cloud platforms checked"
+    ]),
+    ("23", "Security Scoring System", "fas fa-chart-bar", "info", [
+        "0–100 security score calculation", "A–F grade assignment",
+        "Penalty system across all modules", "Critical/High/Medium/Low finding counts",
+        "Score breakdown with finding summaries", "Doughnut chart visualization",
+        "Grade-color coding (green to red)"
+    ]),
+    ("24", "Reporting & Export", "fas fa-file-export", "info", [
+        "JSON export of complete scan data", "Print-ready report (PDF via browser)",
+        "CWE mapping on all findings", "OWASP category mapping",
+        "Remediation advice per finding", "Evidence display for each issue",
+        "Severity-sorted findings", "Timeline tracking"
+    ]),
+    ("25", "Dashboard & UX", "fas fa-gauge-high", "info", [
+        "Professional dark cybersecurity theme", "Full sidebar navigation",
+        "Live scan progress with real-time log streaming", "Interactive tabbed results view",
+        "Score ring chart animation", "Severity breakdown charts",
+        "Scan history table", "Target management with tagging",
+        "Responsive layout (mobile/tablet/desktop)", "Print-friendly styles"
+    ]),
+] %}
+
+{% for num, name, icon, sev, features in all_modules %}
+<div class="mod-detail-card">
+    <div class="mdc-header">
+        <div class="mdc-num">{{ num }}</div>
+        <div class="mdc-icon mi-{{ sev }}"><i class="{{ icon }}"></i></div>
+        <div class="mdc-title">{{ name }}</div>
+        <div class="mdc-count">{{ features|length }} features</div>
+    </div>
+    <div class="mdc-features">
+        {% for f in features %}
+        <div class="mdc-feature"><i class="fas fa-check-circle text-success"></i> {{ f }}</div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+</div>
+
+<!-- OWASP Coverage Table -->
+<div class="section-header"><h2><i class="fas fa-shield-virus"></i> OWASP Top 10 Coverage</h2></div>
+<table class="data-table">
+    <thead><tr><th>ID</th><th>Category</th><th>Tests Performed</th><th>CWE References</th></tr></thead>
+    <tbody>
+    {% set owasp_detail = [
+        ("A01", "Broken Access Control", "Admin exposure, path traversal, method tampering, forced browsing, IDOR, open redirect", "CWE-22, CWE-284, CWE-749, CWE-601"),
+        ("A02", "Cryptographic Failures", "TLS version, cipher suite, forward secrecy, expiry, self-signed, HTTP plaintext", "CWE-295, CWE-298, CWE-311, CWE-326, CWE-327"),
+        ("A03", "Injection", "SQLi (error/blind/time/union), XSS (reflected/DOM), SSTI, command injection, CRLF, host header", "CWE-78, CWE-79, CWE-89, CWE-93, CWE-94, CWE-113"),
+        ("A04", "Insecure Design", "Rate limiting, sequential IDs, lockout absence, business logic", "CWE-307, CWE-330"),
+        ("A05", "Security Misconfiguration", "Directory listing, verbose errors, debug endpoints, CORS, default creds, GraphQL, Swagger", "CWE-209, CWE-215, CWE-548, CWE-942, CWE-1188"),
+        ("A06", "Vulnerable Components", "CMS/library version detection, CVE mapping, package.json exposure", "CWE-1035, CWE-200"),
+        ("A07", "Authentication Failures", "Username enumeration, cookie flags, JWT exposure, session in URL, brute force", "CWE-204, CWE-522, CWE-598, CWE-614"),
+        ("A08", "Integrity Failures", "Missing SRI, CI/CD exposure, Jenkins, GitHub workflows", "CWE-353, CWE-312"),
+        ("A09", "Logging & Monitoring", "Stack trace, lockout, verbose errors, rate limit absence", "CWE-209, CWE-307"),
+        ("A10", "SSRF", "URL params, cloud metadata, localhost access, file protocol, form SSRF vectors", "CWE-918"),
+    ] %}
+    {% for id, cat, tests, cwes in owasp_detail %}
+    <tr>
+        <td><span class="owasp-tag">{{ id }}</span></td>
+        <td class="fw-600">{{ cat }}</td>
+        <td class="small text-muted">{{ tests }}</td>
+        <td class="mono x-small text-muted">{{ cwes }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<!-- Legal Notice -->
+<div class="legal-card">
+    <div class="legal-icon"><i class="fas fa-gavel"></i></div>
+    <div>
+        <h3>Legal & Ethical Usage</h3>
+        <p>SecureScan Pro is designed for <strong>authorized security testing only</strong>. Only scan systems you own or have <strong>explicit written permission</strong> to test. Unauthorized security testing may violate the Computer Fraud and Abuse Act (CFAA), the Computer Misuse Act, GDPR, and other laws. The developers assume no responsibility for misuse of this tool.</p>
+        <p class="mt-8">This tool is intended for: penetration testers with written authorization, developers testing their own applications, security teams auditing their organization's assets.</p>
+    </div>
+</div>
+{% endblock %}

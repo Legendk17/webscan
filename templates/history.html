@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Scan History — SecureScan Pro{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb"><i class="fas fa-clock-rotate-left"></i> Scan History</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Scan History</h1>
+    <p class="page-subtitle">All previous security scans</p>
+    <a href="{{ url_for('scan') }}" class="btn-primary"><i class="fas fa-plus"></i> New Scan</a>
+</div>
+
+{% if scans %}
+<div class="history-table-wrap">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Target</th>
+                <th>Score</th>
+                <th>Grade</th>
+                <th>Critical</th>
+                <th>High</th>
+                <th>OWASP Issues</th>
+                <th>Status</th>
+                <th>Started</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for s in scans %}
+        <tr>
+            <td class="mono fw-500">{{ s.target }}</td>
+            <td>
+                {% if s.results and s.results.score %}
+                <div class="inline-score">
+                    <div class="mini-bar"><div class="mini-bar-fill {{ s.results.score.grade_class }}" style="width:{{ s.results.score.score }}%"></div></div>
+                    <span class="small">{{ s.results.score.score }}/100</span>
+                </div>
+                {% else %}—{% endif %}
+            </td>
+            <td>{% if s.results and s.results.score %}<span class="grade-chip {{ s.results.score.grade_class }}">{{ s.results.score.grade }}</span>{% else %}—{% endif %}</td>
+            <td>{% if s.results and s.results.score and s.results.score.critical %}<span class="sev-chip sev-critical">{{ s.results.score.critical }}</span>{% else %}<span class="text-muted">0</span>{% endif %}</td>
+            <td>{% if s.results and s.results.score and s.results.score.high %}<span class="sev-chip sev-high">{{ s.results.score.high }}</span>{% else %}<span class="text-muted">0</span>{% endif %}</td>
+            <td>{% if s.results and s.results.owasp %}<span class="text-muted">{{ s.results.owasp.total_issues or 0 }}</span>{% else %}—{% endif %}</td>
+            <td><span class="status-chip status-{{ s.status }}">{{ s.status }}</span></td>
+            <td class="text-muted small">{{ s.created_at[:16] if s.created_at else '—' }}</td>
+            <td>
+                {% if s.status in ('complete','running','queued') %}
+                <a href="{{ url_for('results', scan_id=s.id) }}" class="btn-xs">View</a>
+                {% else %}
+                <span class="text-muted small">Error</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-page-state">
+    <i class="fas fa-clock-rotate-left fa-3x text-muted"></i>
+    <h2>No scans yet</h2>
+    <p>Start your first security scan to see results here.</p>
+    <a href="{{ url_for('scan') }}" class="btn-primary"><i class="fas fa-radar"></i> Launch First Scan</a>
+</div>
+{% endif %}
+{% endblock %}

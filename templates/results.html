@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+{% block title %}Scan Results — {{ scan.target }}{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb"><i class="fas fa-chart-bar"></i> Results / {{ scan.id }}</span>{% endblock %}
+
+{% block content %}
+<div class="results-header">
+    <div>
+        <h1 class="page-title"><i class="fas fa-globe"></i> {{ scan.target }}</h1>
+        <p class="page-subtitle">Scan ID: <code>{{ scan.id }}</code> &nbsp;|&nbsp; Started: {{ scan.created_at[:16] if scan.created_at else '—' }} &nbsp;|&nbsp; Status: <span class="status-chip status-{{ scan.status }}">{{ scan.status }}</span></p>
+    </div>
+    {% if scan.status == 'complete' %}
+    <div class="results-actions">
+        <a href="/api/export/{{ scan.id }}/json" class="btn-secondary"><i class="fas fa-download"></i> Export JSON</a>
+        <button onclick="window.print()" class="btn-secondary"><i class="fas fa-print"></i> Print</button>
+        <a href="{{ url_for('scan') }}" class="btn-primary"><i class="fas fa-plus"></i> New Scan</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- LIVE PROGRESS -->
+<div id="progressSection" {% if scan.status == 'complete' or scan.status == 'error' %}style="display:none"{% endif %}>
+    <div class="progress-card">
+        <div class="progress-header">
+            <div class="progress-icon"><i class="fas fa-radar fa-spin"></i></div>
+            <div><h2>Scan In Progress</h2><p id="stepLabel">Initializing…</p></div>
+            <div class="progress-pct" id="progressPct">0%</div>
+        </div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+        <div class="live-log" id="liveLog"></div>
+    </div>
+</div>
+
+<!-- RESULTS -->
+<div id="resultsSection" {% if scan.status != 'complete' %}style="display:none"{% endif %}>
+{% set r = scan.results %}
+{% set score = r.score if r.score else {} %}
+{% set owasp = r.owasp or {} %}
+{% set crawl = r.crawl or {} %}
+{% set ports = r.ports or {} %}
+{% set ssl = r.ssl or {} %}
+{% set http = r.http or {} %}
+{% set dns = r.dns or {} %}
+{% set files = r.files or {} %}
+{% set js = r.js or {} %}
+{% set sens = r.sensitive or {} %}
+{% set subs = r.subdomains or {} %}
+{% set cloud = r.cloud or {} %}
+{% set tech = r.tech or {} %}
+
+<!-- Score Hero -->
+<div class="score-hero-card">
+    <div class="shc-ring-wrap">
+        <svg class="shc-ring" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="60" class="ring-track"/>
+            <circle cx="70" cy="70" r="60" class="ring-fill {{ score.grade_class or 'grade-c' }}"
+                stroke-dasharray="{{ ((score.score or 0)/100*377)|round(1) }} 377"
+                transform="rotate(-90 70 70)"/>
+        </svg>
+        <div class="shc-center"><div class="shc-score">{{ score.score or 0 }}</div><div class="shc-sub">/100</div></div>
+    </div>
+    <div class="shc-details">
+        <span class="grade-large {{ score.grade_class or 'grade-c' }}">{{ score.grade or 'N/A' }}</span>
+        <h2>{% set s = score.score or 0 %}{% if s>=85 %}Excellent Security Posture{% elif s>=70 %}Good — Minor Issues Found{% elif s>=50 %}Moderate — Action Recommended{% elif s>=30 %}Poor — Significant Vulnerabilities{% else %}Critical Risk — Immediate Action Required{% endif %}</h2>
+        <div class="sev-summary">
+            <div class="sev-pill sev-critical"><i class="fas fa-circle-xmark"></i> {{ score.critical or 0 }} Critical</div>
+            <div class="sev-pill sev-high"><i class="fas fa-triangle-exclamation"></i> {{ score.high or 0 }} High</div>
+            <div class="sev-pill sev-medium"><i class="fas fa-exclamation-circle"></i> {{ score.medium or 0 }} Medium</div>
+            <div class="sev-pill sev-low"><i class="fas fa-info-circle"></i> {{ score.low or 0 }} Low</div>
+        </div>
+        {% if score.findings %}
+        <div class="score-findings">
+            {% for f in score.findings[:6] %}
+            <div class="sf-item sf-{{ f.sev }}"><i class="fas fa-{% if f.sev=='critical' %}circle-xmark{% elif f.sev=='high' %}triangle-exclamation{% else %}exclamation-circle{% endif %}"></i> {{ f.msg }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    <div class="shc-chart-wrap"><canvas id="sevChart" width="180" height="180"></canvas></div>
+</div>
+
+<!-- Quick Stats -->
+<div class="quick-stats">
+    <div class="qs-card"><div class="qs-val">{{ crawl.pages_found or 0 }}</div><div class="qs-label">Pages Crawled</div></div>
+    <div class="qs-card"><div class="qs-val">{{ crawl.forms_found or 0 }}</div><div class="qs-label">Forms Found</div></div>
+    <div class="qs-card"><div class="qs-val">{{ ports.total_open or 0 }}</div><div class="qs-label">Open Ports</div></div>
+    <div class="qs-card"><div class="qs-val">{{ ports.risky_count or 0 }}</div><div class="qs-label">Risky Ports</div></div>
+    <div class="qs-card"><div class="qs-val">{{ http.missing_headers_count or 0 }}</div><div class="qs-label">Missing Headers</div></div>
+    <div class="qs-card"><div class="qs-val">{{ owasp.total_issues or 0 }}</div><div class="qs-label">OWASP Issues</div></div>
+    <div class="qs-card"><div class="qs-val">{{ files.found|length if files.found else 0 }}</div><div class="qs-label">Exposed Files</div></div>
+    <div class="qs-card"><div class="qs-val">{{ subs.total or 0 }}</div><div class="qs-label">Subdomains</div></div>
+</div>
+
+<!-- Tabs -->
+<div class="result-tabs">
+    <button class="rtab active" onclick="showTab('owasp',this)"><i class="fas fa-shield-virus"></i> OWASP Top 10</button>
+    <button class="rtab" onclick="showTab('ssl',this)"><i class="fas fa-certificate"></i> SSL/TLS</button>
+    <button class="rtab" onclick="showTab('http',this)"><i class="fas fa-shield-halved"></i> HTTP Security</button>
+    <button class="rtab" onclick="showTab('ports',this)"><i class="fas fa-network-wired"></i> Ports</button>
+    <button class="rtab" onclick="showTab('dns',this)"><i class="fas fa-server"></i> DNS</button>
+    <button class="rtab" onclick="showTab('crawl',this)"><i class="fas fa-spider"></i> Crawler</button>
+    <button class="rtab" onclick="showTab('tech',this)"><i class="fas fa-fingerprint"></i> Tech</button>
+    <button class="rtab" onclick="showTab('js',this)"><i class="fas fa-code"></i> JS</button>
+    <button class="rtab" onclick="showTab('files',this)"><i class="fas fa-folder-open"></i> Files</button>
+    <button class="rtab" onclick="showTab('sensitive',this)"><i class="fas fa-magnifying-glass"></i> Sensitive</button>
+    <button class="rtab" onclick="showTab('subdomains',this)"><i class="fas fa-sitemap"></i> Subdomains</button>
+    <button class="rtab" onclick="showTab('cloud',this)"><i class="fas fa-cloud"></i> Cloud</button>
+</div>
+
+<!-- OWASP TAB -->
+<div id="tab-owasp" class="tab-panel active">
+{% set owasp_names = {"A01":"Broken Access Control","A02":"Cryptographic Failures","A03":"Injection","A04":"Insecure Design","A05":"Security Misconfiguration","A06":"Vulnerable Components","A07":"Authentication Failures","A08":"Software Integrity Failures","A09":"Logging & Monitoring Failures","A10":"SSRF"} %}
+{% if owasp.by_category %}
+    {% for cat_id, cat_findings in owasp.by_category.items() %}
+    <div class="owasp-section">
+        <div class="owasp-section-header">
+            <div class="owasp-cat-badge">{{ cat_id }}</div>
+            <div><h3>{{ owasp_names.get(cat_id, cat_id) }}</h3><span class="finding-count">{{ cat_findings|length }} finding(s)</span></div>
+            <span class="owasp-status-badge {% if cat_findings %}badge-issues{% else %}badge-clean{% endif %}">{% if cat_findings %}Issues Found{% else %}Clean{% endif %}</span>
+        </div>
+        {% if cat_findings %}
+        <div class="findings-list">
+            {% for f in cat_findings %}
+            <div class="finding-card sev-border-{{ f.severity }}">
+                <div class="finding-card-header">
+                    <span class="sev-badge sev-bg-{{ f.severity }}">{{ f.severity|upper }}</span>
+                    <span class="finding-title">{{ f.title }}</span>
+                    {% if f.cwe %}<span class="cwe-badge">{{ f.cwe }}</span>{% endif %}
+                    {% if f.owasp_id %}<span class="owasp-ref-badge">{{ f.owasp_id }}</span>{% endif %}
+                </div>
+                <p class="finding-desc">{{ f.description }}</p>
+                {% if f.evidence %}<div class="evidence-box"><span class="ev-label">Evidence:</span> <code>{{ f.evidence[:250] }}</code></div>{% endif %}
+                {% if f.remediation %}<div class="remediation-box"><i class="fas fa-wrench"></i> <strong>Fix:</strong> {{ f.remediation }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="clean-state"><i class="fas fa-check-circle"></i> No issues found for this category</div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+<div class="empty-state-msg"><i class="fas fa-hourglass"></i> OWASP scan results not yet available</div>
+{% endif %}
+</div>
+
+<!-- SSL TAB -->
+<div id="tab-ssl" class="tab-panel">
+{% if ssl %}
+<div class="result-card-lg">
+    <div class="rcl-header">
+        <div class="rcl-icon rci-ssl"><i class="fas fa-certificate"></i></div>
+        <div><h3>SSL/TLS Certificate Analysis</h3></div>
+        {% if ssl.error %}<span class="status-chip status-error">Error</span>
+        {% elif ssl.expired %}<span class="status-chip status-critical">Expired</span>
+        {% elif ssl.days_left is defined and ssl.days_left < 30 %}<span class="status-chip status-warning">Expiring Soon</span>
+        {% else %}<span class="status-chip status-complete">Valid</span>{% endif %}
+    </div>
+    {% if ssl.error %}
+    <div class="alert-danger"><i class="fas fa-circle-xmark"></i> {{ ssl.error }}</div>
+    {% else %}
+    <div class="info-table">
+        <div class="it-row"><span class="it-key">Common Name</span><span class="it-val mono">{{ ssl.subject }}</span></div>
+        <div class="it-row"><span class="it-key">Organization</span><span class="it-val">{{ ssl.org or '—' }}</span></div>
+        <div class="it-row"><span class="it-key">Issuer</span><span class="it-val">{{ ssl.issuer }}</span></div>
+        <div class="it-row"><span class="it-key">Valid From</span><span class="it-val mono">{{ ssl.notBefore }}</span></div>
+        <div class="it-row"><span class="it-key">Expires</span>
+            <span class="it-val mono {% if ssl.expired %}text-critical{% elif ssl.days_left is defined and ssl.days_left < 30 %}text-warning{% else %}text-success{% endif %}">
+                {{ ssl.notAfter }} {% if not ssl.expired and ssl.days_left is defined %}<span class="days-pill {% if ssl.days_left < 30 %}days-warn{% else %}days-ok{% endif %}">{{ ssl.days_left }}d left</span>{% endif %}
+            </span>
+        </div>
+        <div class="it-row"><span class="it-key">Protocol</span><span class="it-val mono {% if ssl.weak_protocol %}text-critical{% else %}text-success{% endif %}">{{ ssl.protocol }} {% if ssl.weak_protocol %}<i class="fas fa-triangle-exclamation"></i>{% endif %}</span></div>
+        <div class="it-row"><span class="it-key">Cipher Suite</span><span class="it-val mono">{{ ssl.cipher }}</span></div>
+        <div class="it-row"><span class="it-key">Key Bits</span><span class="it-val mono">{{ ssl.key_bits or '—' }}</span></div>
+        <div class="it-row"><span class="it-key">Forward Secrecy</span><span class="it-val {% if ssl.forward_secrecy %}text-success{% else %}text-warning{% endif %}">{{ '✓ Yes' if ssl.forward_secrecy else '✗ No' }}</span></div>
+        <div class="it-row"><span class="it-key">Self-Signed</span><span class="it-val {% if ssl.self_signed %}text-critical{% else %}text-success{% endif %}">{{ 'Yes — Risk' if ssl.self_signed else 'No' }}</span></div>
+        {% if ssl.san %}<div class="it-row"><span class="it-key">Alt Names</span><span class="it-val mono small">{{ ssl.san|join(', ') }}</span></div>{% endif %}
+    </div>
+    {% if ssl.findings %}
+    <div class="ssl-findings">{% for f in ssl.findings %}<div class="sf-item sf-{{ f.sev }}"><i class="fas fa-exclamation-triangle"></i> {{ f.msg }}</div>{% endfor %}</div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endif %}
+</div>
+
+<!-- HTTP TAB -->
+<div id="tab-http" class="tab-panel">
+{% if http and http.headers %}
+<div class="result-card-lg">
+    <div class="rcl-header"><div class="rcl-icon rci-headers"><i class="fas fa-shield-halved"></i></div><div><h3>Security Headers</h3><p>{{ http.missing_headers_count or 0 }} missing — {{ http.missing_high or 0 }} critical</p></div></div>
+    <div class="header-table">
+        {% for hname, hdata in http.headers.items() %}
+        <div class="ht-row {% if hdata.present %}ht-ok{% else %}ht-missing{% endif %}">
+            <div class="ht-status"><i class="fas fa-{% if hdata.present %}check-circle text-success{% else %}times-circle text-critical{% endif %}"></i></div>
+            <div class="ht-name mono">{{ hname }}</div>
+            <div class="ht-sev"><span class="sev-tag sev-tag-{{ hdata.severity }}">{{ hdata.severity }}</span></div>
+            <div class="ht-desc">{{ hdata.desc }}</div>
+            <div class="ht-value">
+                {% if hdata.present %}<span class="mono small text-muted" title="{{ hdata.value }}">{{ (hdata.value or '')[:50] }}{% if (hdata.value or '')|length > 50 %}…{% endif %}</span>
+                {% else %}<span class="text-critical small">Not Set — {{ hdata.recommendation[:60] }}</span>{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% if http.csp_issues %}
+<div class="result-card-lg mt-16"><div class="rcl-header"><div class="rcl-icon rci-warn"><i class="fas fa-code"></i></div><div><h3>CSP Policy Issues</h3></div></div>
+{% for issue in http.csp_issues %}<div class="alert-warning mt-8"><i class="fas fa-triangle-exclamation"></i> {{ issue }}</div>{% endfor %}
+</div>{% endif %}
+{% if http.cors %}<div class="result-card-lg mt-16"><div class="rcl-header"><div class="rcl-icon rci-warn"><i class="fas fa-share-nodes"></i></div><div><h3>CORS Configuration</h3></div></div>
+<div class="info-table"><div class="it-row"><span class="it-key">Allow-Origin</span><span class="it-val mono">{{ http.cors.value or 'Not Set' }}</span></div><div class="it-row"><span class="it-key">Allow-Credentials</span><span class="it-val mono">{{ http.cors.credentials or 'Not Set' }}</span></div></div>
+{% for f in http.cors.findings or [] %}<div class="alert-{{ 'danger' if f.sev in ('critical','high') else 'warning' }} mt-8"><i class="fas fa-exclamation-triangle"></i> {{ f.msg }}</div>{% endfor %}
+</div>{% endif %}
+{% if http.dangerous_methods %}<div class="result-card-lg mt-16"><div class="rcl-header"><div class="rcl-icon rci-danger"><i class="fas fa-exclamation"></i></div><div><h3>Dangerous HTTP Methods Allowed</h3></div></div>
+<div class="tag-row">{% for m in http.dangerous_methods %}<span class="method-tag method-danger">{{ m }}</span>{% endfor %}</div></div>{% endif %}
+{% if http.cookies %}<div class="result-card-lg mt-16"><div class="rcl-header"><div class="rcl-icon rci-cookies"><i class="fas fa-cookie"></i></div><div><h3>Cookie Security Analysis</h3></div></div>
+{% for cookie in http.cookies %}<div class="cookie-row"><span class="cookie-name mono">{{ cookie.name }}</span><span class="flag {% if cookie.secure %}flag-ok{% else %}flag-bad{% endif %}">Secure</span><span class="flag {% if cookie.httponly %}flag-ok{% else %}flag-bad{% endif %}">HttpOnly</span><span class="flag {% if cookie.samesite %}flag-ok{% else %}flag-bad{% endif %}">SameSite{% if cookie.samesite %}={{ cookie.samesite }}{% endif %}</span>{% for issue in cookie.issues %}<span class="cookie-issue">{{ issue }}</span>{% endfor %}</div>{% endfor %}
+</div>{% endif %}
+{% endif %}
+</div>
+
+<!-- PORTS TAB -->
+<div id="tab-ports" class="tab-panel">
+<div class="result-card-lg">
+    <div class="rcl-header"><div class="rcl-icon rci-ports"><i class="fas fa-network-wired"></i></div>
+    <div><h3>Port Scan Results</h3><p>{{ ports.host }} ({{ ports.ip }}) {% if ports.reverse_dns %}· rDNS: {{ ports.reverse_dns }}{% endif %}</p></div>
+    <span class="status-chip {% if ports.risky_count %}status-warning{% else %}status-complete{% endif %}">{{ ports.total_open or 0 }} open · {{ ports.risky_count or 0 }} risky</span></div>
+    {% if ports.open_ports %}
+    <table class="data-table"><thead><tr><th>Port</th><th>Service</th><th>Description</th><th>Banner</th><th>SSL</th><th>Risk</th></tr></thead><tbody>
+    {% for p in ports.open_ports %}<tr class="{% if p.risky %}tr-danger{% endif %}">
+        <td class="mono fw-600 text-accent">{{ p.port }}</td><td>{{ p.service }}</td><td class="text-muted small">{{ p.description }}</td>
+        <td class="mono small text-muted">{{ p.banner[:50] if p.banner else '—' }}</td><td class="mono small">{{ p.ssl_version or '—' }}</td>
+        <td>{% if p.risky %}<span class="risk-pill risk-high"><i class="fas fa-triangle-exclamation"></i> High</span>{% else %}<span class="risk-pill risk-low"><i class="fas fa-check"></i> Low</span>{% endif %}</td>
+    </tr>{% endfor %}</tbody></table>
+    {% else %}<div class="clean-state"><i class="fas fa-lock"></i> No open ports detected</div>{% endif %}
+</div>
+</div>
+
+<!-- DNS TAB -->
+<div id="tab-dns" class="tab-panel">
+<div class="result-card-lg">
+    <div class="rcl-header"><div class="rcl-icon rci-dns"><i class="fas fa-server"></i></div><div><h3>DNS Security Analysis</h3><p>{{ dns.root_domain }} ({{ dns.ip }})</p></div></div>
+    <div class="dns-checks-grid">
+        {% for name, val, desc in [("SPF",dns.spf,"Email spoofing protection"),("DKIM",dns.dkim,"Email signing"),("DMARC",dns.dmarc,"Policy enforcement"),("DNSSEC",dns.dnssec,"DNS integrity")] %}
+        <div class="dns-check-card {% if val %}dnsc-ok{% else %}dnsc-missing{% endif %}">
+            <div class="dnsc-icon"><i class="fas fa-{% if val %}check{% else %}times{% endif %}"></i></div>
+            <div class="dnsc-name">{{ name }}</div>
+            <div class="dnsc-desc">{{ desc }}</div>
+            {% if val and val != True %}<div class="dnsc-value mono">{{ (val|string)[:60] }}</div>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% if dns.mx_records %}<div class="mt-16"><h4 class="subsection-title">MX Records</h4><div class="tag-row">{% for mx in dns.mx_records %}<span class="mono-tag">{{ mx }}</span>{% endfor %}</div></div>{% endif %}
+    {% if dns.zone_transfer and dns.zone_transfer.vulnerable %}<div class="alert-danger mt-16"><i class="fas fa-circle-xmark"></i> <strong>Zone Transfer Allowed!</strong> DNS zone transferable from {{ dns.zone_transfer.ns }}</div>{% endif %}
+    {% for t in dns.takeover_risks or [] %}<div class="alert-danger mt-8"><i class="fas fa-triangle-exclamation"></i> Subdomain takeover: <code>{{ t.cname }}</code> — {{ t.reason }}</div>{% endfor %}
+    {% for issue in (dns.spf_issues or []) + (dns.dmarc_issues or []) %}<div class="alert-warning mt-4"><i class="fas fa-exclamation-triangle"></i> {{ issue }}</div>{% endfor %}
+</div>
+</div>
+
+<!-- CRAWLER TAB -->
+<div id="tab-crawl" class="tab-panel">
+<div class="crawl-stats-row">
+    {% for label, val in [("Pages",crawl.pages_found or 0),("Links",crawl.links_found or 0),("Forms",crawl.forms_found or 0),("JS Files",crawl.js_files|length if crawl.js_files else 0),("API Endpoints",crawl.api_endpoints|length if crawl.api_endpoints else 0),("Parameters",crawl.parameters_found|length if crawl.parameters_found else 0)] %}
+    <div class="cs-stat"><div class="cs-val">{{ val }}</div><div class="cs-label">{{ label }}</div></div>
+    {% endfor %}
+</div>
+<div class="crawl-flags mt-16">
+    <span class="crawl-flag {% if crawl.robots_found %}flag-ok{% else %}flag-neutral{% endif %}"><i class="fas fa-robot"></i> robots.txt {% if crawl.robots_found %}Found{% else %}Not Found{% endif %}</span>
+    <span class="crawl-flag {% if crawl.sitemap_found %}flag-ok{% else %}flag-neutral{% endif %}"><i class="fas fa-map"></i> sitemap.xml {% if crawl.sitemap_found %}Found{% else %}Not Found{% endif %}</span>
+    <span class="crawl-flag {% if crawl.graphql_hints %}flag-warn{% else %}flag-neutral{% endif %}"><i class="fas fa-circle-nodes"></i> GraphQL {% if crawl.graphql_hints %}Detected{% else %}Not Detected{% endif %}</span>
+    <span class="crawl-flag {% if crawl.websocket_urls %}flag-warn{% else %}flag-neutral{% endif %}"><i class="fas fa-plug-circle-bolt"></i> WebSocket {% if crawl.websocket_urls %}Detected{% else %}Not Detected{% endif %}</span>
+    <span class="crawl-flag {% if crawl.upload_forms %}flag-warn{% else %}flag-neutral{% endif %}"><i class="fas fa-upload"></i> Upload Forms {% if crawl.upload_forms %}Detected{% else %}Not Found{% endif %}</span>
+</div>
+{% if crawl.api_endpoints %}<div class="result-card-lg mt-16"><div class="rcl-header"><div class="rcl-icon rci-api"><i class="fas fa-plug"></i></div><div><h3>API Endpoints ({{ crawl.api_endpoints|length }})</h3></div></div><div class="endpoint-list">{% for ep in crawl.api_endpoints[:30] %}<div class="endpoint-item mono">{{ ep }}</div>{% endfor %}</div></div>{% endif %}
+{% if crawl.parameters_found %}<div class="result-card-lg mt-16"><div class="rcl-header"><div><h3>Parameters ({{ crawl.parameters_found|length }})</h3></div></div><div class="tag-row">{% for p in crawl.parameters_found %}<span class="mono-tag">{{ p }}</span>{% endfor %}</div></div>{% endif %}
+{% if crawl.forms %}<div class="result-card-lg mt-16"><div class="rcl-header"><div class="rcl-icon rci-forms"><i class="fas fa-wpforms"></i></div><div><h3>Forms ({{ crawl.forms|length }})</h3></div></div>{% for form in crawl.forms[:15] %}<div class="form-row"><span class="method-tag {% if form.method=='POST' %}method-post{% else %}method-get{% endif %}">{{ form.method }}</span><span class="mono small">{{ form.action[:80] }}</span><span class="text-muted small">{{ form.inputs|length }} inputs</span></div>{% endfor %}</div>{% endif %}
+</div>
+
+<!-- TECH TAB -->
+<div id="tab-tech" class="tab-panel">
+{% if tech.by_category %}
+{% for category, names in tech.by_category.items() %}
+<div class="result-card-lg mb-12"><div class="rcl-header"><div class="rcl-icon rci-tech"><i class="fas fa-microchip"></i></div><div><h3>{{ category }}</h3></div></div>
+<div class="tag-row">{% for name in names %}<span class="tech-tag">{{ name }}{% if tech.versions and tech.versions.get(name) %} <span class="tech-ver">v{{ tech.versions[name] }}</span>{% endif %}</span>{% endfor %}</div></div>
+{% endfor %}
+{% if tech.server_info %}<div class="result-card-lg mt-16"><div class="rcl-header"><div><h3>Server Information</h3></div></div>
+<div class="info-table">{% for k,v in tech.server_info.items() %}<div class="it-row"><span class="it-key">{{ k }}</span><span class="it-val mono text-muted">{{ v }}</span></div>{% endfor %}</div></div>{% endif %}
+{% else %}<div class="empty-state-msg"><i class="fas fa-fingerprint"></i> No technologies detected</div>{% endif %}
+</div>
+
+<!-- JS ANALYSIS TAB -->
+<div id="tab-js" class="tab-panel">
+{% if js.secrets %}<div class="result-card-lg mb-16"><div class="rcl-header"><div class="rcl-icon rci-danger"><i class="fas fa-key"></i></div><div><h3>Secrets in JavaScript ({{ js.secrets|length }})</h3></div></div>
+{% for s in js.secrets %}<div class="secret-row sev-border-{{ s.severity }}"><span class="sev-badge sev-bg-{{ s.severity }}">{{ s.severity }}</span><span class="secret-type">{{ s.type }}</span><span class="mono small text-muted">{{ s.value_masked }}</span><span class="text-muted x-small">{{ (s.js_file or '')[-50:] }}</span></div>{% endfor %}
+</div>{% endif %}
+{% if js.dom_sinks %}<div class="result-card-lg mb-16"><div class="rcl-header"><div class="rcl-icon rci-warn"><i class="fas fa-code"></i></div><div><h3>DOM XSS Sinks ({{ js.dom_sinks|length }})</h3></div></div>
+{% for sink in js.dom_sinks[:15] %}<div class="sink-row"><span class="sink-name mono">{{ sink.sink }}</span><span class="mono small text-muted">{{ sink.context }}</span></div>{% endfor %}
+</div>{% endif %}
+{% if js.endpoints %}<div class="result-card-lg mb-16"><div class="rcl-header"><div class="rcl-icon rci-api"><i class="fas fa-plug"></i></div><div><h3>Endpoints in JS ({{ js.endpoints|length }})</h3></div></div>
+<div class="endpoint-list">{% for ep in js.endpoints[:30] %}<div class="endpoint-item mono">{{ ep }}</div>{% endfor %}</div></div>{% endif %}
+{% if not js.secrets and not js.dom_sinks %}<div class="clean-state"><i class="fas fa-code"></i> No secrets or dangerous sinks detected in {{ js.js_files_analyzed or 0 }} JS file(s)</div>{% endif %}
+</div>
+
+<!-- FILES TAB -->
+<div id="tab-files" class="tab-panel">
+<div class="files-summary"><span>Checked <strong>{{ files.checked or 0 }}</strong> paths</span><span>Found <strong class="{% if files.found %}text-critical{% endif %}">{{ files.found|length if files.found else 0 }}</strong> exposed</span></div>
+{% if files.found %}
+{% for category, items in (files.by_category or {}).items() %}
+<div class="result-card-lg mb-12"><div class="rcl-header"><div class="rcl-icon rci-files"><i class="fas fa-folder-open"></i></div><div><h3>{{ category }}</h3><p>{{ items|length }} file(s)</p></div></div>
+{% for f in items %}<div class="file-row sev-border-{{ f.severity }}"><span class="sev-badge sev-bg-{{ f.severity }}">{{ f.severity }}</span><a href="{{ f.url }}" target="_blank" class="mono file-url">{{ f.path }}</a><span class="text-muted small">HTTP {{ f.status }} · {{ f.size }}B</span>{% if f.has_sensitive_content %}<span class="sens-flag"><i class="fas fa-key"></i> Contains sensitive data</span>{% endif %}</div>{% endfor %}
+</div>{% endfor %}
+{% else %}<div class="clean-state"><i class="fas fa-folder-closed"></i> No sensitive files discovered</div>{% endif %}
+</div>
+
+<!-- SENSITIVE TAB -->
+<div id="tab-sensitive" class="tab-panel">
+{% if sens.found %}
+{% for sev_level in ['critical','high','medium','low','info'] %}
+{% if sens.by_severity and sens.by_severity.get(sev_level) %}
+<div class="result-card-lg mb-12"><div class="rcl-header"><div class="rcl-icon rci-{{ 'danger' if sev_level in ('critical','high') else 'warn' }}"><i class="fas fa-magnifying-glass"></i></div><div><h3>{{ sev_level|title }}</h3></div></div>
+{% for item in sens.by_severity[sev_level] %}<div class="sensitive-row sev-border-{{ item.severity }}"><span class="sev-badge sev-bg-{{ item.severity }}">{{ item.severity }}</span><span class="sens-type">{{ item.type }}</span><span class="mono small text-muted">{{ item.value }}</span><span class="text-muted x-small">{{ (item.source_url or '')[-40:] }}</span></div>{% endfor %}
+</div>{% endif %}{% endfor %}
+{% else %}<div class="clean-state"><i class="fas fa-shield-check"></i> No sensitive information detected</div>{% endif %}
+</div>
+
+<!-- SUBDOMAINS TAB -->
+<div id="tab-subdomains" class="tab-panel">
+<div class="files-summary"><span>Found <strong>{{ subs.total or 0 }}</strong> subdomains</span><span>Takeover risks: <strong class="{% if subs.takeover_risks %}text-critical{% endif %}">{{ subs.takeover_risks|length if subs.takeover_risks else 0 }}</strong></span></div>
+{% if subs.takeover_risks %}<div class="alert-danger mb-16"><i class="fas fa-triangle-exclamation"></i> Subdomain takeover risk(s) detected!</div>{% endif %}
+{% if subs.found %}
+<div class="result-card-lg"><table class="data-table"><thead><tr><th>Subdomain</th><th>IP</th><th>HTTP</th><th>Risk</th></tr></thead><tbody>
+{% for sub in subs.found %}<tr {% if sub.takeover_risk %}class="tr-danger"{% endif %}>
+<td class="mono">{{ sub.subdomain }}</td><td class="mono text-muted">{{ sub.ip }}</td><td>{{ sub.http_status or '—' }}</td>
+<td>{% if sub.takeover_risk %}<span class="risk-pill risk-high"><i class="fas fa-triangle-exclamation"></i> {{ sub.takeover_risk }}</span>{% else %}<span class="text-muted small">—</span>{% endif %}</td>
+</tr>{% endfor %}</tbody></table></div>
+{% else %}<div class="clean-state"><i class="fas fa-sitemap"></i> No subdomains discovered</div>{% endif %}
+</div>
+
+<!-- CLOUD TAB -->
+<div id="tab-cloud" class="tab-panel">
+<div class="files-summary"><span>Checks: <strong>{{ cloud.checks_performed|join(', ') if cloud.checks_performed else '—' }}</strong></span></div>
+{% if cloud.exposures %}
+{% for exp in cloud.exposures %}
+<div class="result-card-lg mb-8"><div class="rcl-header"><span class="sev-badge sev-bg-{{ exp.severity }}">{{ exp.severity }}</span><div><h3>{{ exp.type }}</h3><p>{{ exp.detail }}</p></div></div>
+<div class="it-row"><span class="it-key">URL</span><span class="it-val mono"><a href="{{ exp.url }}" target="_blank">{{ exp.url }}</a></span></div>
+<div class="it-row"><span class="it-key">Status</span><span class="it-val">{{ exp.status }}</span></div></div>
+{% endfor %}
+{% else %}<div class="clean-state"><i class="fas fa-cloud"></i> No cloud exposures detected</div>{% endif %}
+</div>
+
+</div><!-- /resultsSection -->
+
+<script>
+const scanId="{{ scan.id }}";
+const isComplete={{ 'true' if scan.status=='complete' else 'false' }};
+function showTab(name,btn){
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('active'));
+    document.getElementById('tab-'+name).classList.add('active');
+    btn.classList.add('active');
+}
+{% if scan.status=='complete' and scan.results.score %}
+const ctx=document.getElementById('sevChart');
+if(ctx){new Chart(ctx,{type:'doughnut',data:{labels:['Critical','High','Medium','Low'],datasets:[{data:[{{scan.results.score.critical or 0}},{{scan.results.score.high or 0}},{{scan.results.score.medium or 0}},{{scan.results.score.low or 0}}],backgroundColor:['#ef4444','#f97316','#f59e0b','#3b82f6'],borderWidth:0,hoverOffset:4}]},options:{cutout:'70%',plugins:{legend:{display:false}},responsive:true}});}
+{% endif %}
+if(!isComplete){
+    const poll=setInterval(async()=>{
+        try{
+            const res=await fetch('/api/status/'+scanId);
+            const data=await res.json();
+            document.getElementById('progressPct').textContent=data.progress+'%';
+            document.getElementById('progressBar').style.width=data.progress+'%';
+            document.getElementById('stepLabel').textContent=(data.step||'Scanning…').replace(/_/g,' ');
+            const log=document.getElementById('liveLog');
+            log.innerHTML='';
+            (data.logs||[]).slice(-15).forEach(e=>{
+                const line=document.createElement('div');
+                line.className='log-line';
+                line.innerHTML=`<span class="log-time">${e.time}</span> ${e.msg}`;
+                log.appendChild(line);
+            });
+            log.scrollTop=log.scrollHeight;
+            if(data.status==='complete'||data.status==='error'){clearInterval(poll);setTimeout(()=>location.reload(),800);}
+        }catch(e){}
+    },1500);
+}
+</script>
+{% endblock %}

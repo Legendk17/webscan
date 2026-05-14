@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Targets — SecureScan Pro{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb"><i class="fas fa-crosshairs"></i> Targets</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Target Management</h1>
+    <p class="page-subtitle">Manage your asset inventory and scan targets</p>
+</div>
+
+<div class="targets-layout">
+    <!-- Add Target Form -->
+    <div class="target-form-card">
+        <h3><i class="fas fa-plus-circle"></i> Add Target</h3>
+        <form method="POST" action="{{ url_for('targets') }}">
+            <input type="hidden" name="action" value="add">
+            <div class="form-group">
+                <label class="form-label">URL / Domain</label>
+                <input type="text" name="url" class="form-input" placeholder="https://example.com" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Name / Label</label>
+                <input type="text" name="name" class="form-input" placeholder="Production App">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tags</label>
+                <input type="text" name="tags" class="form-input" placeholder="production, api, critical">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea name="notes" class="form-textarea" placeholder="Additional notes…" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn-primary w-full"><i class="fas fa-plus"></i> Add Target</button>
+        </form>
+    </div>
+
+    <!-- Target List -->
+    <div class="target-list">
+        {% if targets %}
+        {% for t in targets %}
+        <div class="target-card">
+            <div class="target-card-header">
+                <div class="target-icon"><i class="fas fa-crosshairs"></i></div>
+                <div class="target-main">
+                    <div class="target-name">{{ t.name or t.url }}</div>
+                    <div class="target-url mono">{{ t.url }}</div>
+                </div>
+                <div class="target-actions">
+                    <a href="{{ url_for('scan') }}?target={{ t.url }}" class="btn-xs btn-scan"><i class="fas fa-radar"></i> Scan</a>
+                    <form method="POST" style="display:inline">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="id" value="{{ t.id }}">
+                        <button type="submit" class="btn-xs btn-delete" onclick="return confirm('Delete this target?')"><i class="fas fa-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+            {% if t.tags %}
+            <div class="target-tags">
+                {% for tag in t.tags.split(',') %}
+                <span class="target-tag-chip">{{ tag.strip() }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% if t.notes %}
+            <div class="target-notes">{{ t.notes }}</div>
+            {% endif %}
+            <div class="target-meta">Added: {{ t.added }}</div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-page-state">
+            <i class="fas fa-crosshairs fa-3x text-muted"></i>
+            <h2>No targets yet</h2>
+            <p>Add your first target to start managing your asset inventory.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

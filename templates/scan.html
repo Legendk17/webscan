@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}New Scan — SecureScan Pro{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb"><i class="fas fa-radar"></i> New Scan</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Launch Security Scan</h1>
+    <p class="page-subtitle">Configure and start a comprehensive security assessment</p>
+</div>
+
+<div class="scan-layout">
+    <div class="scan-form-card">
+        <div class="scan-form-header">
+            <i class="fas fa-crosshairs"></i>
+            <div>
+                <h2>Target Configuration</h2>
+                <p>Enter a domain or full URL to begin scanning</p>
+            </div>
+        </div>
+
+        <form action="{{ url_for('scan') }}" method="POST" id="scanForm">
+            <div class="form-group">
+                <label class="form-label">Target URL or Domain</label>
+                <div class="url-input-wrap">
+                    <i class="fas fa-globe url-icon"></i>
+                    <input type="text" name="target" id="targetInput"
+                           placeholder="example.com or https://example.com"
+                           class="url-input" required autocomplete="off" spellcheck="false">
+                </div>
+                <p class="form-hint">Protocols (https://) will be added automatically if omitted</p>
+            </div>
+
+            <div class="modules-checklist">
+                <div class="mcl-header">
+                    <span>Scan Modules</span>
+                    <span class="all-active-badge"><i class="fas fa-check-circle"></i> All Active</span>
+                </div>
+                <div class="mcl-grid">
+                    {% set mods = [
+                        ("fas fa-spider", "Web Crawler"),
+                        ("fas fa-fingerprint", "Tech Fingerprint"),
+                        ("fas fa-certificate", "SSL/TLS"),
+                        ("fas fa-network-wired", "Port Scanner"),
+                        ("fas fa-server", "DNS Security"),
+                        ("fas fa-shield-virus", "OWASP A01-A10"),
+                        ("fas fa-code", "JS Analysis"),
+                        ("fas fa-magnifying-glass", "Sensitive Data"),
+                        ("fas fa-folder-open", "File Discovery"),
+                        ("fas fa-sitemap", "Subdomains"),
+                        ("fas fa-cloud", "Cloud Security"),
+                        ("fas fa-shield-halved", "HTTP Headers"),
+                    ] %}
+                    {% for icon, name in mods %}
+                    <div class="mcl-item active">
+                        <i class="{{ icon }}"></i>
+                        <span>{{ name }}</span>
+                        <i class="fas fa-check mcl-check"></i>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="owasp-checklist">
+                <div class="mcl-header"><span>OWASP Top 10 Checks</span></div>
+                <div class="owasp-tags">
+                    {% for id in ["A01","A02","A03","A04","A05","A06","A07","A08","A09","A10"] %}
+                    <span class="owasp-tag">{{ id }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button type="submit" class="launch-btn" id="launchBtn">
+                <span class="lb-text"><i class="fas fa-radar"></i> Launch Full Scan</span>
+                <span class="lb-loading" style="display:none"><i class="fas fa-circle-notch fa-spin"></i> Initializing scan…</span>
+            </button>
+        </form>
+    </div>
+
+    <div class="scan-info-panel">
+        <div class="sip-card">
+            <h3><i class="fas fa-clock"></i> Estimated Duration</h3>
+            <div class="sip-time">2–5 minutes</div>
+            <p>Depends on target response time and number of open endpoints</p>
+        </div>
+
+        <div class="sip-card">
+            <h3><i class="fas fa-list-check"></i> What Gets Checked</h3>
+            <ul class="sip-list">
+                <li><i class="fas fa-check text-green"></i> SSL/TLS configuration & expiry</li>
+                <li><i class="fas fa-check text-green"></i> All 7 critical security headers</li>
+                <li><i class="fas fa-check text-green"></i> 30+ open ports with service detection</li>
+                <li><i class="fas fa-check text-green"></i> SPF, DKIM, DMARC, DNSSEC records</li>
+                <li><i class="fas fa-check text-green"></i> SQL injection (error/blind/time-based)</li>
+                <li><i class="fas fa-check text-green"></i> XSS (reflected, DOM, stored surfaces)</li>
+                <li><i class="fas fa-check text-green"></i> SSRF, open redirect, command injection</li>
+                <li><i class="fas fa-check text-green"></i> 100+ sensitive file/backup paths</li>
+                <li><i class="fas fa-check text-green"></i> JavaScript secrets & DOM sinks</li>
+                <li><i class="fas fa-check text-green"></i> Cloud storage & metadata exposure</li>
+                <li><i class="fas fa-check text-green"></i> Subdomain enumeration & takeover</li>
+                <li><i class="fas fa-check text-green"></i> Technology stack fingerprinting</li>
+            </ul>
+        </div>
+
+        <div class="sip-card sip-warn">
+            <h3><i class="fas fa-triangle-exclamation"></i> Legal Notice</h3>
+            <p>Only scan targets you own or have explicit written permission to test. Unauthorized security testing may be illegal.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('scanForm').addEventListener('submit', function() {
+    document.querySelector('.lb-text').style.display = 'none';
+    document.querySelector('.lb-loading').style.display = 'inline-flex';
+    document.getElementById('launchBtn').disabled = true;
+});
+</script>
+{% endblock %}

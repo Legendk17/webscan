@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — SecureScan Pro{% endblock %}
+
+{% block breadcrumb %}
+<span class="breadcrumb"><i class="fas fa-gauge-high"></i> Dashboard</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Security Dashboard</h1>
+    <p class="page-subtitle">Professional web application security scanning platform</p>
+</div>
+
+<!-- Hero Scan Box -->
+<div class="hero-scan-card">
+    <div class="hero-scan-inner">
+        <div class="hero-label-row">
+            <span class="pulse-dot"></span>
+            <span class="hero-label-text">25+ Security Modules Active</span>
+        </div>
+        <h2>Scan Any Target</h2>
+        <p>Full OWASP Top 10 coverage • Port scanning • SSL/TLS analysis • DNS security • Cloud checks • JS analysis</p>
+        <form action="{{ url_for('scan') }}" method="POST" class="hero-form">
+            <div class="hero-input-wrap">
+                <i class="fas fa-globe"></i>
+                <input type="text" name="target" placeholder="Enter domain or URL — e.g. example.com" required autocomplete="off">
+                <button type="submit" class="hero-scan-btn">
+                    <i class="fas fa-radar"></i> Start Full Scan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon-wrap si-blue"><i class="fas fa-radar"></i></div>
+        <div>
+            <div class="stat-number">{{ total_scans }}</div>
+            <div class="stat-label">Total Scans</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon-wrap si-green"><i class="fas fa-check-circle"></i></div>
+        <div>
+            <div class="stat-number">{{ complete_scans }}</div>
+            <div class="stat-label">Completed</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon-wrap si-purple"><i class="fas fa-shield-halved"></i></div>
+        <div>
+            <div class="stat-number">25+</div>
+            <div class="stat-label">Scan Modules</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon-wrap si-orange"><i class="fas fa-bug"></i></div>
+        <div>
+            <div class="stat-number">100+</div>
+            <div class="stat-label">Vulnerability Checks</div>
+        </div>
+    </div>
+</div>
+
+<!-- Modules Grid -->
+<div class="section-header">
+    <h2>Active Security Modules</h2>
+</div>
+<div class="modules-grid">
+    {% set modules = [
+        ("fas fa-shield-virus", "OWASP Top 10", "Full A01–A10 coverage including SQLi, XSS, SSRF, broken auth, and more", "critical"),
+        ("fas fa-spider", "Smart Crawler", "Recursive crawl · Form extraction · JS routes · API discovery · sitemap/robots.txt", "info"),
+        ("fas fa-fingerprint", "Tech Fingerprinting", "Detect CMS, frameworks, CDNs, WAFs, libraries, auth providers", "info"),
+        ("fas fa-certificate", "SSL/TLS Analysis", "Protocol · cipher · expiry · forward secrecy · self-signed · weak crypto", "high"),
+        ("fas fa-network-wired", "Port & Network", "TCP scan · banner grab · service detection · risky port flags · reverse DNS", "medium"),
+        ("fas fa-server", "DNS Security", "SPF · DKIM · DMARC · DNSSEC · zone transfer · subdomain takeover", "medium"),
+        ("fas fa-code", "JavaScript Analysis", "Secret extraction · DOM XSS sinks · endpoint discovery · WebSocket detection", "high"),
+        ("fas fa-magnifying-glass", "Sensitive Discovery", "API keys · AWS creds · JWTs · internal IPs · SQL/PHP errors · PII", "critical"),
+        ("fas fa-folder-open", "File Discovery", "100+ paths: .env · .git · backups · admin panels · debug endpoints · logs", "high"),
+        ("fas fa-sitemap", "Subdomain Enum", "Brute force · cert transparency (crt.sh) · takeover detection", "medium"),
+        ("fas fa-cloud", "Cloud Security", "S3 · Firebase · Azure Blob · GCP · Elasticsearch · cloud metadata SSRF", "high"),
+        ("fas fa-shield-halved", "HTTP Security", "All security headers · CSP analysis · CORS · cookies · caching · methods", "medium"),
+    ] %}
+    {% for icon, name, desc, sev in modules %}
+    <div class="module-card">
+        <div class="module-icon mi-{{ sev }}"><i class="{{ icon }}"></i></div>
+        <div class="module-info">
+            <div class="module-name">{{ name }}</div>
+            <div class="module-desc">{{ desc }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- OWASP Coverage -->
+<div class="section-header">
+    <h2>OWASP Top 10 Coverage</h2>
+</div>
+<div class="owasp-grid">
+    {% set owasp = [
+        ("A01", "Broken Access Control", "IDOR · Privilege escalation · Forced browsing · Path traversal · Method tampering · Admin exposure"),
+        ("A02", "Cryptographic Failures", "Weak TLS · Expired certs · Missing HSTS · HTTP exposure · Weak ciphers · No forward secrecy"),
+        ("A03", "Injection", "SQLi (error/blind/time/union) · XSS (reflected/DOM/stored) · SSTI · Command injection · CRLF · XXE · Host header"),
+        ("A04", "Insecure Design", "No rate limiting · Predictable IDs · Business logic flaws · OTP bypass · Race conditions"),
+        ("A05", "Security Misconfiguration", "Missing headers · Verbose errors · Debug endpoints · Directory listing · CORS · Default creds · GraphQL"),
+        ("A06", "Vulnerable Components", "Library version detection · Known CVEs · Outdated CMS · Exposed package.json"),
+        ("A07", "Authentication Failures", "Username enumeration · Insecure cookies · Session tokens in URL · JWT exposure · Brute force"),
+        ("A08", "Integrity Failures", "Missing SRI · CI/CD exposure · Jenkins · GitHub workflow leaks · Dependency confusion"),
+        ("A09", "Logging & Monitoring", "Stack trace exposure · No account lockout · Verbose errors · Missing rate limits"),
+        ("A10", "SSRF", "Internal IP · Cloud metadata · URL parameter injection · Redirect SSRF · File protocol"),
+    ] %}
+    {% for id, name, checks in owasp %}
+    <div class="owasp-card">
+        <div class="owasp-id">{{ id }}</div>
+        <div class="owasp-info">
+            <div class="owasp-name">{{ name }}</div>
+            <div class="owasp-checks">{{ checks }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Recent Scans -->
+{% if recent %}
+<div class="section-header">
+    <h2>Recent Scans</h2>
+    <a href="{{ url_for('history') }}" class="section-link">View all <i class="fas fa-arrow-right"></i></a>
+</div>
+<div class="recent-table">
+    <table>
+        <thead>
+            <tr><th>Target</th><th>Score</th><th>Grade</th><th>Issues</th><th>Completed</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for s in recent %}
+        <tr>
+            <td class="mono">{{ s.target }}</td>
+            <td>
+                {% if s.results.score %}
+                <div class="mini-score-bar">
+                    <div class="mini-score-fill {{ s.results.score.grade_class }}" style="width:{{ s.results.score.score }}%"></div>
+                </div>
+                {{ s.results.score.score }}/100
+                {% endif %}
+            </td>
+            <td>
+                {% if s.results.score %}
+                <span class="grade-chip {{ s.results.score.grade_class }}">{{ s.results.score.grade }}</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if s.results.score %}
+                {% if s.results.score.critical %}<span class="sev-chip sev-critical">{{ s.results.score.critical }}C</span>{% endif %}
+                {% if s.results.score.high %}<span class="sev-chip sev-high">{{ s.results.score.high }}H</span>{% endif %}
+                {% if s.results.score.medium %}<span class="sev-chip sev-medium">{{ s.results.score.medium }}M</span>{% endif %}
+                {% endif %}
+            </td>
+            <td class="text-muted small">{{ s.completed_at[:16] if s.completed_at else '—' }}</td>
+            <td><a href="{{ url_for('results', scan_id=s.id) }}" class="btn-xs">View</a></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

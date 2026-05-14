@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SecureScan Pro{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon"><i class="fas fa-shield-halved"></i></div>
+            <div class="brand-text">
+                <span class="brand-name">SecureScan</span>
+                <span class="brand-version">Pro v2.0</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <span class="nav-section-label">Main</span>
+                <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+                    <i class="fas fa-gauge-high"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('scan') }}" class="nav-item {% if request.endpoint == 'scan' %}active{% endif %}">
+                    <i class="fas fa-radar"></i>
+                    <span>New Scan</span>
+                </a>
+                <a href="{{ url_for('history') }}" class="nav-item {% if request.endpoint == 'history' %}active{% endif %}">
+                    <i class="fas fa-clock-rotate-left"></i>
+                    <span>Scan History</span>
+                </a>
+                <a href="{{ url_for('targets') }}" class="nav-item {% if request.endpoint == 'targets' %}active{% endif %}">
+                    <i class="fas fa-crosshairs"></i>
+                    <span>Targets</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <span class="nav-section-label">Modules</span>
+                <div class="nav-item nav-item-sub">
+                    <i class="fas fa-shield-virus"></i>
+                    <span>OWASP Top 10</span>
+                    <span class="nav-badge-pill">A01–A10</span>
+                </div>
+                <div class="nav-item nav-item-sub">
+                    <i class="fas fa-network-wired"></i>
+                    <span>Port Scanner</span>
+                </div>
+                <div class="nav-item nav-item-sub">
+                    <i class="fas fa-certificate"></i>
+                    <span>SSL/TLS Analyzer</span>
+                </div>
+                <div class="nav-item nav-item-sub">
+                    <i class="fas fa-spider"></i>
+                    <span>Web Crawler</span>
+                </div>
+                <div class="nav-item nav-item-sub">
+                    <i class="fas fa-code"></i>
+                    <span>JS Analyzer</span>
+                </div>
+                <div class="nav-item nav-item-sub">
+                    <i class="fas fa-cloud"></i>
+                    <span>Cloud Security</span>
+                </div>
+                <div class="nav-item nav-item-sub">
+                    <i class="fas fa-server"></i>
+                    <span>DNS Security</span>
+                </div>
+                <div class="nav-item nav-item-sub">
+                    <i class="fas fa-sitemap"></i>
+                    <span>Subdomains</span>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <span class="nav-section-label">Info</span>
+                <a href="{{ url_for('about') }}" class="nav-item {% if request.endpoint == 'about' %}active{% endif %}">
+                    <i class="fas fa-circle-info"></i>
+                    <span>About</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="sf-status">
+                <span class="status-dot-green"></span>
+                <span>Scanner Online</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="top-bar">
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="top-bar-center">
+                {% block breadcrumb %}{% endblock %}
+            </div>
+            <div class="top-bar-right">
+                <a href="{{ url_for('scan') }}" class="btn-primary-sm">
+                    <i class="fas fa-plus"></i> New Scan
+                </a>
+            </div>
+        </header>
+
+        <main class="page-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+<script>
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+    document.querySelector('.main-content').classList.toggle('sidebar-collapsed');
+}
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
